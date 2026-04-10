@@ -369,7 +369,7 @@ export default function Page() {
     <main className="page-shell">
       <div className="hero">
         <div>
-          <span className="eyebrow">Security Equipment Checkout</span>
+          <span className="eyebrow">BCI - Zion Medical Center</span>
           <h1>Badge scan in. QR scan out. Scan again to return.</h1>
           <p>
             A web-based checkout app for security teams to track radios, phones, keys, tablets, and other issued equipment by officer and shift. adge scanners and QR scanners usually act like keyboards. Click in a field and scan
@@ -391,7 +391,7 @@ export default function Page() {
       <section className="content-grid">
         <div className="panel span-2">
           <h2>Officer session</h2>
-          <p className="muted">BCI - Zion Medical Center.</p>
+          <p className="muted"></p>
 
           <div className="form-block">
             <label htmlFor="badge">1) Scan officer badge</label>

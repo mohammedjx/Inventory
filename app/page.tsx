@@ -1,14 +1,33 @@
 "use client";
 
-"use client";
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertCircle,
+  BadgeCheck,
+  CheckCircle2,
+  ClipboardList,
+  Download,
+  LogIn,
+  Package,
+  QrCode,
+  Radio,
+  Search,
+  Shield,
+  Smartphone,
+  KeyRound,
+  Undo2,
+  UserRound,
+} from "lucide-react";
 import { motion } from "framer-motion";
-
-let XLSX: any;
-if (typeof window !== "undefined") {
-  XLSX = require("xlsx");
-}
 
 const STORAGE_KEY = "hospital-equipment-checkout-demo-v1";
 
@@ -29,7 +48,7 @@ const starterOfficers = [
   { badge: "BCI-1777", name: "Officer Delaney", shift: "Day" },
 ];
 
-const icons = {
+const icons: Record<string, React.ComponentType<{ className?: string }>> = {
   Radio,
   Phone: Smartphone,
   Keys: KeyRound,
@@ -45,10 +64,11 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function downloadCSV(filename, rows) {
+function downloadCSV(filename: string, rows: (string | number | null)[][]) {
   const csv = rows
     .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
     .join("\n");
+
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -58,9 +78,70 @@ function downloadCSV(filename, rows) {
   URL.revokeObjectURL(url);
 }
 
-function loadData() {
+type Officer = {
+  badge: string;
+  name: string;
+  shift: string;
+};
+
+type EquipmentItem = {
+  id: string;
+  qr: string;
+  name: string;
+  type: string;
+  status: "available" | "checked_out";
+  notes: string;
+  checkedOutBy?: string | null;
+  checkedOutAt?: string | null;
+};
+
+type SessionEquipment = {
+  equipmentId: string;
+  qr: string;
+  name: string;
+  type: string;
+  checkedOutAt: string;
+  checkedInAt: string | null;
+};
+
+type Session = {
+  id: string;
+  officerBadge: string;
+  officerName: string;
+  shift: string;
+  status: "open" | "closed";
+  openedAt: string;
+  closedAt: string | null;
+  equipment: SessionEquipment[];
+};
+
+type LogEntry = {
+  id: string;
+  time: string;
+  action: string;
+  detail: string;
+};
+
+type AppData = {
+  officers: Officer[];
+  equipment: EquipmentItem[];
+  sessions: Session[];
+  logs: LogEntry[];
+};
+
+function loadData(): AppData {
+  if (typeof window === "undefined") {
+    return {
+      officers: starterOfficers,
+      equipment: starterEquipment,
+      sessions: [],
+      logs: [],
+    };
+  }
+
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) return JSON.parse(saved);
+  if (saved) return JSON.parse(saved) as AppData;
+
   return {
     officers: starterOfficers,
     equipment: starterEquipment,
@@ -69,7 +150,7 @@ function loadData() {
   };
 }
 
-function AppShell({ children }) {
+function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl p-4 md:p-8">{children}</div>
@@ -77,7 +158,17 @@ function AppShell({ children }) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, subtext }) {
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  subtext,
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  subtext: string;
+}) {
   return (
     <Card className="rounded-2xl shadow-sm">
       <CardContent className="p-5">
@@ -96,12 +187,26 @@ function StatCard({ title, value, icon: Icon, subtext }) {
   );
 }
 
-function EquipmentIcon({ type }) {
+function EquipmentIcon({ type }: { type: string }) {
   const Icon = icons[type] || icons.Default;
   return <Icon className="h-4 w-4" />;
 }
 
-function ScanInput({ label, placeholder, value, setValue, onSubmit, inputRef }) {
+function ScanInput({
+  label,
+  placeholder,
+  value,
+  setValue,
+  onSubmit,
+  inputRef,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  setValue: (value: string) => void;
+  onSubmit: () => void;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -116,30 +221,46 @@ function ScanInput({ label, placeholder, value, setValue, onSubmit, inputRef }) 
           placeholder={placeholder}
           className="h-11 rounded-xl"
         />
-        <Button onClick={onSubmit} className="h-11 rounded-xl">Scan</Button>
+        <Button onClick={onSubmit} className="h-11 rounded-xl">
+          Scan
+        </Button>
       </div>
-      <p className="text-xs text-slate-500">Works with most badge and QR scanners that type into the focused field and send Enter.</p>
+      <p className="text-xs text-slate-500">
+        Works with most badge and QR scanners that type into the focused field and send Enter.
+      </p>
     </div>
   );
 }
 
 export default function EquipmentCheckoutApp() {
-  const [data, setData] = useState(() => loadData());
+  const [data, setData] = useState<AppData>(() => loadData());
   const [activeOfficerBadge, setActiveOfficerBadge] = useState("");
   const [badgeInput, setBadgeInput] = useState("");
   const [equipmentInput, setEquipmentInput] = useState("");
   const [search, setSearch] = useState("");
   const [newOfficer, setNewOfficer] = useState({ badge: "", name: "", shift: "Day" });
   const [newEquipment, setNewEquipment] = useState({ qr: "", name: "", type: "Radio", notes: "" });
-  const badgeRef = useRef(null);
-  const equipmentRef = useRef(null);
+
+  const badgeRef = useRef<HTMLInputElement>(null);
+  const equipmentRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data]);
 
-  const activeSession = useMemo(() => data.sessions.find((s) => s.officerBadge === activeOfficerBadge && s.status === "open"), [data.sessions, activeOfficerBadge]);
-  const activeOfficer = useMemo(() => data.officers.find((o) => o.badge === activeOfficerBadge), [data.officers, activeOfficerBadge]);
+  useEffect(() => {
+    badgeRef.current?.focus();
+  }, []);
+
+  const activeSession = useMemo(
+    () => data.sessions.find((s) => s.officerBadge === activeOfficerBadge && s.status === "open"),
+    [data.sessions, activeOfficerBadge]
+  );
+
+  const activeOfficer = useMemo(
+    () => data.officers.find((o) => o.badge === activeOfficerBadge),
+    [data.officers, activeOfficerBadge]
+  );
 
   const availableCount = data.equipment.filter((e) => e.status === "available").length;
   const checkedOutCount = data.equipment.filter((e) => e.status === "checked_out").length;
@@ -148,6 +269,7 @@ export default function EquipmentCheckoutApp() {
   const filteredEquipment = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return data.equipment;
+
     return data.equipment.filter(
       (e) =>
         e.name.toLowerCase().includes(q) ||
@@ -157,7 +279,7 @@ export default function EquipmentCheckoutApp() {
     );
   }, [search, data.equipment]);
 
-  function addLog(action, detail) {
+  function addLog(action: string, detail: string) {
     setData((prev) => ({
       ...prev,
       logs: [{ id: uid(), time: nowStamp(), action, detail }, ...prev.logs],
@@ -180,6 +302,7 @@ export default function EquipmentCheckoutApp() {
     setData((prev) => {
       const existing = prev.sessions.find((s) => s.officerBadge === officer.badge && s.status === "open");
       if (existing) return prev;
+
       return {
         ...prev,
         sessions: [
@@ -220,10 +343,27 @@ export default function EquipmentCheckoutApp() {
       setData((prev) => ({
         ...prev,
         equipment: prev.equipment.map((e) =>
-          e.id === item.id ? { ...e, status: "checked_out", checkedOutBy: activeSession.officerBadge, checkedOutAt: nowStamp() } : e
+          e.id === item.id
+            ? { ...e, status: "checked_out", checkedOutBy: activeSession.officerBadge, checkedOutAt: nowStamp() }
+            : e
         ),
         sessions: prev.sessions.map((s) =>
-          s.id === activeSession.id ? { ...s, equipment: [...s.equipment, { equipmentId: item.id, qr: item.qr, name: item.name, type: item.type, checkedOutAt: nowStamp(), checkedInAt: null }] } : s
+          s.id === activeSession.id
+            ? {
+                ...s,
+                equipment: [
+                  ...s.equipment,
+                  {
+                    equipmentId: item.id,
+                    qr: item.qr,
+                    name: item.name,
+                    type: item.type,
+                    checkedOutAt: nowStamp(),
+                    checkedInAt: null,
+                  },
+                ],
+              }
+            : s
         ),
       }));
       addLog("Equipment checked out", `${item.name} → ${officerName}`);
@@ -255,6 +395,7 @@ export default function EquipmentCheckoutApp() {
 
   function closeSession() {
     if (!activeSession) return;
+
     const outstanding = activeSession.equipment.filter((e) => !e.checkedInAt);
     if (outstanding.length > 0) {
       addLog("Session close blocked", `${activeSession.officerName} still has ${outstanding.length} item(s) checked out`);
@@ -267,6 +408,7 @@ export default function EquipmentCheckoutApp() {
         s.id === activeSession.id ? { ...s, status: "closed", closedAt: nowStamp() } : s
       ),
     }));
+
     addLog("Officer session closed", `${activeSession.officerName} (${activeSession.officerBadge})`);
     setActiveOfficerBadge("");
     setTimeout(() => badgeRef.current?.focus(), 50);
@@ -274,83 +416,26 @@ export default function EquipmentCheckoutApp() {
 
   function addOfficer() {
     if (!newOfficer.badge || !newOfficer.name) return;
+
     setData((prev) => ({
       ...prev,
       officers: [...prev.officers, { ...newOfficer, badge: newOfficer.badge.toUpperCase() }],
     }));
+
     addLog("Officer added", `${newOfficer.name} (${newOfficer.badge.toUpperCase()})`);
     setNewOfficer({ badge: "", name: "", shift: "Day" });
   }
 
-  async function importOfficersFromExcel(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: "array" });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-
-      const imported = rows
-        .map((row) => {
-          const badge = String(
-            row["Badge"] ||
-              row["Badge ID"] ||
-              row["BadgeID"] ||
-              row["Employee ID"] ||
-              row["EmployeeID"] ||
-              row["ID"] ||
-              ""
-          )
-            .trim()
-            .toUpperCase();
-
-          const name = String(
-            row["Name"] ||
-              row["Officer Name"] ||
-              row["Officer"] ||
-              row["Employee Name"] ||
-              ""
-          ).trim();
-
-          const shift = String(row["Shift"] || "Day").trim() || "Day";
-
-          if (!badge || !name) return null;
-          return { badge, name, shift };
-        })
-        .filter(Boolean);
-
-      if (!imported.length) {
-        addLog("Officer import failed", "No valid rows found in Excel file");
-        event.target.value = "";
-        return;
-      }
-
-      setData((prev) => {
-        const existingBadges = new Set(prev.officers.map((o) => o.badge.toUpperCase()));
-        const uniqueNewOfficers = imported.filter((o) => !existingBadges.has(o.badge));
-        return {
-          ...prev,
-          officers: [...prev.officers, ...uniqueNewOfficers],
-        };
-      });
-
-      addLog("Officers imported", `${imported.length} row(s) processed from ${file.name}`);
-    } catch (error) {
-      addLog("Officer import failed", `Could not read ${file.name}`);
-    }
-
-    event.target.value = "";
-  }
-
   function addEquipment() {
     if (!newEquipment.qr || !newEquipment.name) return;
+
     const id = `EQ-${Math.floor(1000 + Math.random() * 9000)}`;
+
     setData((prev) => ({
       ...prev,
       equipment: [...prev.equipment, { id, ...newEquipment, qr: newEquipment.qr.toUpperCase(), status: "available" }],
     }));
+
     addLog("Equipment added", `${newEquipment.name} (${newEquipment.qr.toUpperCase()})`);
     setNewEquipment({ qr: "", name: "", type: "Radio", notes: "" });
   }
@@ -363,7 +448,10 @@ export default function EquipmentCheckoutApp() {
   }
 
   function exportSessions() {
-    const rows = [["Officer", "Badge", "Shift", "Status", "Opened", "Closed", "Equipment", "Checked Out", "Checked In"]];
+    const rows: (string | number | null)[][] = [
+      ["Officer", "Badge", "Shift", "Status", "Opened", "Closed", "Equipment", "Checked Out", "Checked In"],
+    ];
+
     data.sessions.forEach((session) => {
       if (!session.equipment.length) {
         rows.push([session.officerName, session.officerBadge, session.shift, session.status, session.openedAt, session.closedAt || "", "", "", ""]);
@@ -383,12 +471,9 @@ export default function EquipmentCheckoutApp() {
         });
       }
     });
+
     downloadCSV("equipment-sessions.csv", rows);
   }
-
-  useEffect(() => {
-    badgeRef.current?.focus();
-  }, []);
 
   return (
     <AppShell>
@@ -396,16 +481,27 @@ export default function EquipmentCheckoutApp() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-sm text-slate-600 shadow-sm">
-              <Shield className="h-4 w-4" /> Security Equipment Checkout
+              <Shield className="h-4 w-4" />
+              Security Equipment Checkout
             </div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Badge-in, scan gear, track accountability.</h1>
-            <p className="mt-2 max-w-3xl text-sm md:text-base text-slate-600">
-              Built for shift change. Officers scan their badge to start a session, scan equipment to check out, and scan the same items again to return them before ending the shift.
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              Badge-in, scan gear, track accountability.
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm text-slate-600 md:text-base">
+              Built for shift change. Officers scan their badge to start a session, scan equipment to check out, and
+              scan the same items again to return them before ending the shift.
             </p>
           </div>
+
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="rounded-xl" onClick={exportLogs}><Download className="mr-2 h-4 w-4" /> Export Audit Log</Button>
-            <Button variant="outline" className="rounded-xl" onClick={exportSessions}><ClipboardList className="mr-2 h-4 w-4" /> Export Sessions</Button>
+            <Button variant="outline" className="rounded-xl" onClick={exportLogs}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Audit Log
+            </Button>
+            <Button variant="outline" className="rounded-xl" onClick={exportSessions}>
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Export Sessions
+            </Button>
           </div>
         </div>
 
@@ -418,51 +514,129 @@ export default function EquipmentCheckoutApp() {
 
         <Tabs defaultValue="scanner" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 rounded-2xl bg-white p-1 shadow-sm">
-            <TabsTrigger value="scanner" className="rounded-xl">Scanner</TabsTrigger>
-            <TabsTrigger value="equipment" className="rounded-xl">Equipment</TabsTrigger>
-            <TabsTrigger value="sessions" className="rounded-xl">Sessions</TabsTrigger>
-            <TabsTrigger value="admin" className="rounded-xl">Admin</TabsTrigger>
+            <TabsTrigger value="scanner" className="rounded-xl">
+              Scanner
+            </TabsTrigger>
+            <TabsTrigger value="equipment" className="rounded-xl">
+              Equipment
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="rounded-xl">
+              Sessions
+            </TabsTrigger>
+            <TabsTrigger value="admin" className="rounded-xl">
+              Admin
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="scanner" className="space-y-4">
             <div className="grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
               <Card className="rounded-2xl shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl">Add Officer</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <BadgeCheck className="h-5 w-5" />
+                    Shift Start / End
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label>Badge ID</Label><Input className="rounded-xl" value={newOfficer.badge} onChange={(e) => setNewOfficer({ ...newOfficer, badge: e.target.value })} placeholder="BCI-2001" /></div>
-                  <div className="space-y-2"><Label>Officer Name</Label><Input className="rounded-xl" value={newOfficer.name} onChange={(e) => setNewOfficer({ ...newOfficer, name: e.target.value })} placeholder="Officer Name" /></div>
-                  <div className="space-y-2">
-                    <Label>Shift</Label>
-                    <Select value={newOfficer.shift} onValueChange={(value) => setNewOfficer({ ...newOfficer, shift: value })}>
-                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Day">Day</SelectItem>
-                        <SelectItem value="Swing">Swing</SelectItem>
-                        <SelectItem value="Night">Night</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button onClick={addOfficer} className="rounded-xl">Save officer</Button>
+
+                <CardContent className="space-y-6">
+                  <ScanInput
+                    label="1) Scan officer badge"
+                    placeholder="Scan badge or type badge number"
+                    value={badgeInput}
+                    setValue={setBadgeInput}
+                    onSubmit={registerOfficerScan}
+                    inputRef={badgeRef}
+                  />
 
                   <div className="rounded-2xl border bg-slate-50 p-4">
-                    <p className="font-medium">Bulk import officers from Excel</p>
-                    <p className="mt-1 text-sm text-slate-500">Upload an .xlsx file with columns like Name, Badge ID, and Shift.</p>
-                    <Input type="file" accept=".xlsx,.xls" className="mt-3 rounded-xl" onChange={importOfficersFromExcel} />
-                    <p className="mt-2 text-xs text-slate-500">Supported column names: Name / Officer Name, Badge / Badge ID / Employee ID / ID, Shift.</p>
+                    {activeOfficer ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm text-slate-500">Active officer</p>
+                            <h3 className="text-2xl font-semibold">{activeOfficer.name}</h3>
+                            <p className="text-sm text-slate-600">
+                              Badge: {activeOfficer.badge} · Shift: {activeOfficer.shift}
+                            </p>
+                          </div>
+                          <Badge className="rounded-full px-3 py-1">Session Open</Badge>
+                        </div>
+
+                        <ScanInput
+                          label="2) Scan equipment QR code"
+                          placeholder="Scan radio, phone, key set, camera, etc."
+                          value={equipmentInput}
+                          setValue={setEquipmentInput}
+                          onSubmit={handleEquipmentScan}
+                          inputRef={equipmentRef}
+                        />
+
+                        <div className="rounded-2xl bg-white p-4 shadow-sm">
+                          <div className="mb-3 flex items-center justify-between">
+                            <h4 className="font-medium">Current session items</h4>
+                            <p className="text-sm text-slate-500">Scan again to check in</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            {(activeSession?.equipment || []).length === 0 && (
+                              <p className="text-sm text-slate-500">No equipment checked out yet.</p>
+                            )}
+
+                            {(activeSession?.equipment || []).map((item, idx) => (
+                              <div key={`${item.equipmentId}-${idx}`} className="flex items-center justify-between rounded-xl border p-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="rounded-xl bg-slate-100 p-2">
+                                    <EquipmentIcon type={item.type} />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{item.name}</p>
+                                    <p className="text-xs text-slate-500">{item.qr}</p>
+                                  </div>
+                                </div>
+
+                                {item.checkedInAt ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    Returned
+                                  </Badge>
+                                ) : (
+                                  <Badge className="rounded-full">Out</Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <Button onClick={closeSession} className="rounded-xl">
+                            End shift session
+                          </Button>
+                          <Button variant="outline" onClick={() => setActiveOfficerBadge("")} className="rounded-xl">
+                            Switch officer
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-dashed bg-white p-6 text-center text-slate-500">
+                        Scan an officer badge to begin a checkout session.
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-2xl shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl"><AlertCircle className="h-5 w-5" /> Activity Feed</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <AlertCircle className="h-5 w-5" />
+                    Activity Feed
+                  </CardTitle>
                 </CardHeader>
+
                 <CardContent>
                   <ScrollArea className="h-[560px] pr-4">
                     <div className="space-y-3">
                       {data.logs.length === 0 && <p className="text-sm text-slate-500">No activity yet.</p>}
+
                       {data.logs.map((log) => (
                         <div key={log.id} className="rounded-2xl border bg-white p-4">
                           <div className="flex items-center justify-between gap-3">
@@ -484,33 +658,51 @@ export default function EquipmentCheckoutApp() {
               <CardHeader>
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <CardTitle className="text-xl">Equipment Inventory</CardTitle>
+
                   <div className="relative w-full md:w-80">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search equipment" className="rounded-xl pl-9" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search equipment"
+                      className="rounded-xl pl-9"
+                    />
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {filteredEquipment.map((item) => (
                     <div key={item.id} className="rounded-2xl border bg-white p-4 shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="rounded-xl bg-slate-100 p-2"><EquipmentIcon type={item.type} /></div>
+                          <div className="rounded-xl bg-slate-100 p-2">
+                            <EquipmentIcon type={item.type} />
+                          </div>
                           <div>
                             <p className="font-medium">{item.name}</p>
-                            <p className="text-xs text-slate-500">{item.type} · {item.qr}</p>
+                            <p className="text-xs text-slate-500">
+                              {item.type} · {item.qr}
+                            </p>
                           </div>
                         </div>
+
                         {item.status === "available" ? (
-                          <Badge variant="secondary" className="rounded-full">Available</Badge>
+                          <Badge variant="secondary" className="rounded-full">
+                            Available
+                          </Badge>
                         ) : (
                           <Badge className="rounded-full">Checked out</Badge>
                         )}
                       </div>
+
                       <p className="mt-3 text-sm text-slate-600">{item.notes || "No notes"}</p>
+
                       {item.checkedOutBy && (
-                        <p className="mt-2 text-xs text-slate-500">Assigned to {item.checkedOutBy} since {item.checkedOutAt}</p>
+                        <p className="mt-2 text-xs text-slate-500">
+                          Assigned to {item.checkedOutBy} since {item.checkedOutAt}
+                        </p>
                       )}
                     </div>
                   ))}
@@ -523,42 +715,63 @@ export default function EquipmentCheckoutApp() {
             <div className="grid gap-4 lg:grid-cols-2">
               {data.sessions.map((session) => {
                 const outstanding = session.equipment.filter((i) => !i.checkedInAt).length;
+
                 return (
                   <Card key={session.id} className="rounded-2xl shadow-sm">
                     <CardHeader>
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <CardTitle className="text-xl">{session.officerName}</CardTitle>
-                          <p className="mt-1 text-sm text-slate-500">{session.officerBadge} · {session.shift} shift</p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {session.officerBadge} · {session.shift} shift
+                          </p>
                         </div>
+
                         <Badge variant={session.status === "open" ? "default" : "secondary"} className="rounded-full">
                           {session.status === "open" ? "Open" : "Closed"}
                         </Badge>
                       </div>
                     </CardHeader>
+
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="rounded-xl bg-slate-50 p-3"><p className="text-slate-500">Started</p><p className="mt-1 font-medium">{session.openedAt}</p></div>
-                        <div className="rounded-xl bg-slate-50 p-3"><p className="text-slate-500">Ended</p><p className="mt-1 font-medium">{session.closedAt || "Still active"}</p></div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <p className="text-slate-500">Started</p>
+                          <p className="mt-1 font-medium">{session.openedAt}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <p className="text-slate-500">Ended</p>
+                          <p className="mt-1 font-medium">{session.closedAt || "Still active"}</p>
+                        </div>
                       </div>
+
                       <div className="rounded-xl border p-3">
                         <div className="mb-2 flex items-center justify-between">
                           <p className="font-medium">Checked equipment</p>
                           <p className="text-sm text-slate-500">Outstanding: {outstanding}</p>
                         </div>
+
                         <div className="space-y-2">
                           {session.equipment.length === 0 && <p className="text-sm text-slate-500">No items in this session.</p>}
+
                           {session.equipment.map((item, idx) => (
                             <div key={`${item.equipmentId}-${idx}`} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
                               <div>
                                 <p className="font-medium">{item.name}</p>
                                 <p className="text-xs text-slate-500">Out: {item.checkedOutAt}</p>
                               </div>
+
                               <div className="text-right text-xs text-slate-500">
                                 {item.checkedInAt ? (
-                                  <span className="inline-flex items-center gap-1"><Undo2 className="h-3.5 w-3.5" /> In: {item.checkedInAt}</span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <Undo2 className="h-3.5 w-3.5" />
+                                    In: {item.checkedInAt}
+                                  </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1"><Package className="h-3.5 w-3.5" /> Not returned</span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <Package className="h-3.5 w-3.5" />
+                                    Not returned
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -578,13 +791,34 @@ export default function EquipmentCheckoutApp() {
                 <CardHeader>
                   <CardTitle className="text-xl">Add Officer</CardTitle>
                 </CardHeader>
+
                 <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label>Badge ID</Label><Input className="rounded-xl" value={newOfficer.badge} onChange={(e) => setNewOfficer({ ...newOfficer, badge: e.target.value })} placeholder="BCI-2001" /></div>
-                  <div className="space-y-2"><Label>Officer Name</Label><Input className="rounded-xl" value={newOfficer.name} onChange={(e) => setNewOfficer({ ...newOfficer, name: e.target.value })} placeholder="Officer Name" /></div>
+                  <div className="space-y-2">
+                    <Label>Badge ID</Label>
+                    <Input
+                      className="rounded-xl"
+                      value={newOfficer.badge}
+                      onChange={(e) => setNewOfficer({ ...newOfficer, badge: e.target.value })}
+                      placeholder="BCI-2001"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Officer Name</Label>
+                    <Input
+                      className="rounded-xl"
+                      value={newOfficer.name}
+                      onChange={(e) => setNewOfficer({ ...newOfficer, name: e.target.value })}
+                      placeholder="Officer Name"
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Shift</Label>
                     <Select value={newOfficer.shift} onValueChange={(value) => setNewOfficer({ ...newOfficer, shift: value })}>
-                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Day">Day</SelectItem>
                         <SelectItem value="Swing">Swing</SelectItem>
@@ -592,7 +826,10 @@ export default function EquipmentCheckoutApp() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={addOfficer} className="rounded-xl">Save officer</Button>
+
+                  <Button onClick={addOfficer} className="rounded-xl">
+                    Save officer
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -600,13 +837,34 @@ export default function EquipmentCheckoutApp() {
                 <CardHeader>
                   <CardTitle className="text-xl">Add Equipment</CardTitle>
                 </CardHeader>
+
                 <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label>QR Code Value</Label><Input className="rounded-xl" value={newEquipment.qr} onChange={(e) => setNewEquipment({ ...newEquipment, qr: e.target.value })} placeholder="RADIO-3001" /></div>
-                  <div className="space-y-2"><Label>Equipment Name</Label><Input className="rounded-xl" value={newEquipment.name} onChange={(e) => setNewEquipment({ ...newEquipment, name: e.target.value })} placeholder="Radio 3" /></div>
+                  <div className="space-y-2">
+                    <Label>QR Code Value</Label>
+                    <Input
+                      className="rounded-xl"
+                      value={newEquipment.qr}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, qr: e.target.value })}
+                      placeholder="RADIO-3001"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Equipment Name</Label>
+                    <Input
+                      className="rounded-xl"
+                      value={newEquipment.name}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, name: e.target.value })}
+                      placeholder="Radio 3"
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Type</Label>
                     <Select value={newEquipment.type} onValueChange={(value) => setNewEquipment({ ...newEquipment, type: value })}>
-                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Radio">Radio</SelectItem>
                         <SelectItem value="Phone">Phone</SelectItem>
@@ -616,8 +874,20 @@ export default function EquipmentCheckoutApp() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2"><Label>Notes</Label><Textarea className="rounded-xl" value={newEquipment.notes} onChange={(e) => setNewEquipment({ ...newEquipment, notes: e.target.value })} placeholder="Battery included, key ring color, assigned area, etc." /></div>
-                  <Button onClick={addEquipment} className="rounded-xl">Save equipment</Button>
+
+                  <div className="space-y-2">
+                    <Label>Notes</Label>
+                    <Textarea
+                      className="rounded-xl"
+                      value={newEquipment.notes}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, notes: e.target.value })}
+                      placeholder="Battery included, key ring color, assigned area, etc."
+                    />
+                  </div>
+
+                  <Button onClick={addEquipment} className="rounded-xl">
+                    Save equipment
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -627,7 +897,11 @@ export default function EquipmentCheckoutApp() {
         <Card className="rounded-2xl border-emerald-200 bg-emerald-50 shadow-sm">
           <CardContent className="flex flex-col gap-2 p-5 text-sm text-emerald-900">
             <p className="font-medium">Recommended real-world setup</p>
-            <p>Use badge scanners and QR scanners in keyboard-wedge mode so they act like fast keyboards. In production, connect this UI to a secure database and add supervisor permissions, lost-item workflows, and device-camera scanning for mobile use.</p>
+            <p>
+              Use badge scanners and QR scanners in keyboard-wedge mode so they act like fast keyboards. In production,
+              connect this UI to a secure database and add supervisor permissions, lost-item workflows, and device-camera
+              scanning for mobile use.
+            </p>
           </CardContent>
         </Card>
       </motion.div>

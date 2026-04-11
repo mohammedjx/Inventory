@@ -1,20 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertCircle, BadgeCheck, CheckCircle2, ClipboardList, Download, LogIn, Package, QrCode, Radio, Search, Shield, Smartphone, KeyRound, Undo2, UserRound } from "lucide-react";
-import { motion } from "framer-motion";
-let XLSX: any;
+"use client";
 
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
+
+let XLSX: any;
 if (typeof window !== "undefined") {
   XLSX = require("xlsx");
 }

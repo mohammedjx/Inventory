@@ -13,7 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertCircle, BadgeCheck, CheckCircle2, ClipboardList, Download, LogIn, Package, QrCode, Radio, Search, Shield, Smartphone, KeyRound, Undo2, UserRound } from "lucide-react";
 import { motion } from "framer-motion";
-import * as XLSX from "xlsx";
+let XLSX: any;
+
+if (typeof window !== "undefined") {
+  XLSX = require("xlsx");
+}
 
 const STORAGE_KEY = "hospital-equipment-checkout-demo-v1";
 

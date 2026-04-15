@@ -33,7 +33,7 @@ const starterEquipment = [
 ];
 
 const starterOfficers = [
-  { badge: "BCI-1452", name: "Officer Archer", shift: "Day" },
+  { badge: "/O558994/", name: "Jawad Kadhim", shift: "Day" },
   { badge: "BCI-1841", name: "Officer Beltran", shift: "Swing" },
   { badge: "BCI-1999", name: "Officer Crawford", shift: "Night" },
   { badge: "BCI-1777", name: "Officer Delaney", shift: "Day" },

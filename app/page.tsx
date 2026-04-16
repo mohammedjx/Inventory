@@ -56,7 +56,7 @@ type AppData = {
 const STORAGE_KEY = 'equipment-checkout-app-v1';
 
 const starterEquipment: Equipment[] = [
-  { id: 'EQ-1001', qr: '/642UBS1203/', name: 'ZIO_01', type: 'Radio', status: 'available', notes: 'Primary dispatch channel' },
+  { id: 'EQ-1001', qr: '\642UBS1203\', name: 'ZIO_01', type: 'Radio', status: 'available', notes: 'Primary dispatch channel' },
   { id: 'EQ-1002', qr: 'RADIO-1002', name: 'Radio 2', type: 'Radio', status: 'available', notes: 'Spare radio with extra battery' },
   { id: 'EQ-2001', qr: 'PHONE-2001', name: 'Duty Phone A', type: 'Phone', status: 'available', notes: 'Supervisor line' },
   { id: 'EQ-3001', qr: 'KEYS-3001', name: 'ER Keys', type: 'Keys', status: 'available', notes: 'Red key ring' },

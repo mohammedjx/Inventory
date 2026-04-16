@@ -65,6 +65,7 @@ const starterEquipment: Equipment[] = [
 ];
 
 const starterOfficers: Officer[] = [
+  { badge: 'o558994' , name: 'ASM Jawad Kadhim', shift: 'Day'},
   { badge: 'BCI-1452', name: 'Officer Archer', shift: 'Day' },
   { badge: 'BCI-1841', name: 'Officer Beltran', shift: 'Swing' },
   { badge: 'BCI-1999', name: 'Officer Crawford', shift: 'Night' },

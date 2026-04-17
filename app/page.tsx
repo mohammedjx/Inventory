@@ -22,8 +22,7 @@ import { motion } from "framer-motion";
 
 const STORAGE_KEY = "hospital-equipment-checkout-demo-v1";
 
-const starterEquipment = [
-  { id: "EQ-1001", qr: "RADIO-1001", name: "Radio 1", type: "Radio", status: "available", notes: "Security channel ready" },
+const starterEquipment: EquipmentItem[] = [  { id: "EQ-1001", qr: "RADIO-1001", name: "Radio 1", type: "Radio", status: "available", notes: "Security channel ready" },
   { id: "EQ-1002", qr: "RADIO-1002", name: "Radio 2", type: "Radio", status: "available", notes: "Spare battery attached" },
   { id: "EQ-2001", qr: "PHONE-2001", name: "Duty Phone A", type: "Phone", status: "available", notes: "iPhone" },
   { id: "EQ-2002", qr: "PHONE-2002", name: "Duty Phone B", type: "Phone", status: "available", notes: "Android" },

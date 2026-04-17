@@ -377,13 +377,31 @@ export default function Page() {
   }
 
   function addOfficer() {
-    if (!newOfficer.badge.trim() || !newOfficer.name.trim()) return;
-    setData((prev) => ({
-      ...prev,
-      officers: [...prev.officers, { ...newOfficer, badge: newOfficer.badge.toUpperCase() }],
-    }));
-    addLog('Officer added', `${newOfficer.name} (${newOfficer.badge.toUpperCase()})`);
-    setNewOfficer({ badge: '', name: '', shift: 'Day' });
+    const addOfficer = () => {
+  if (!newOfficer.name || !newOfficer.badge || !newOfficer.nuid) return;
+
+  const officer: Officer = {
+    badge: newOfficer.badge,
+    name: newOfficer.name,
+    shift: newOfficer.shift,
+    nuid: newOfficer.nuid,
+    photo: newOfficer.photo,
+  };
+
+  setData((prev) => ({
+    ...prev,
+    officers: [...prev.officers, officer],
+  }));
+
+  // reset form
+  setNewOfficer({
+    name: "",
+    badge: "",
+    shift: "Day",
+    nuid: "",
+    photo: "",
+  });
+};
   }
 
   function addEquipment() {

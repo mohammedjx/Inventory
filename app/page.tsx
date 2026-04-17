@@ -55,7 +55,7 @@ type AppData = {
 
 const STORAGE_KEY = 'equipment-checkout-app-v1';
 
-const starterEquipment: EquipmentItem[] = [
+const starterEquipment: Equipment[] = [
   {
     id: "radio-1",
     qr: "RADIO-001",

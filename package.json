@@ -1,6 +1,4 @@
 {
-  "lucide-react": "^0.511.0",
-  "framer-motion": "^11.11.17"
   "name": "equipment-checkout-app",
   "version": "1.0.0",
   "private": true,
@@ -16,6 +14,8 @@
     "next": "^15.2.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+    "lucide-react": "^0.511.0",
+  "framer-motion": "^11.11.17"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

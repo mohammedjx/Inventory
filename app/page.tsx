@@ -55,13 +55,31 @@ type AppData = {
 
 const STORAGE_KEY = 'equipment-checkout-app-v1';
 
-const starterEquipment: Equipment[] = [
-  { id: 'EQ-1001', qr: '\642UBS1203\', name: 'ZIO_01', type: 'Radio', status: 'available', notes: 'Primary dispatch channel' },
-  { id: 'EQ-1002', qr: 'RADIO-1002', name: 'Radio 2', type: 'Radio', status: 'available', notes: 'Spare radio with extra battery' },
-  { id: 'EQ-2001', qr: 'PHONE-2001', name: 'Duty Phone A', type: 'Phone', status: 'available', notes: 'Supervisor line' },
-  { id: 'EQ-3001', qr: 'KEYS-3001', name: 'ER Keys', type: 'Keys', status: 'available', notes: 'Red key ring' },
-  { id: 'EQ-3002', qr: 'KEYS-3002', name: 'Clinic Keys', type: 'Keys', status: 'available', notes: 'Orange key ring' },
-  { id: 'EQ-4001', qr: 'TABLET-4001', name: 'Incident Tablet', type: 'Tablet', status: 'available', notes: 'Report writing tablet' },
+const starterEquipment: EquipmentItem[] = [
+  {
+    id: "radio-1",
+    qr: "RADIO-001",
+    name: "Radio 1",
+    type: "Radio",
+    status: "available",
+    notes: "",
+  },
+  {
+    id: "phone-1",
+    qr: "PHONE-001",
+    name: "Phone 1",
+    type: "Phone",
+    status: "available",
+    notes: "",
+  },
+  {
+    id: "keys-1",
+    qr: "KEYS-001",
+    name: "Keys 1",
+    type: "Keys",
+    status: "available",
+    notes: "",
+  },
 ];
 
 const starterOfficers = [

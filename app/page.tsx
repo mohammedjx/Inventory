@@ -6,6 +6,8 @@ type Officer = {
   badge: string;
   name: string;
   shift: string;
+  nuid: string;
+  photo?: string; // base64 image
 };
 
 type Equipment = {
@@ -81,6 +83,20 @@ const starterEquipment: Equipment[] = [
     notes: "",
   },
 ];
+
+const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setNewOfficer((prev) => ({
+      ...prev,
+      photo: reader.result as string,
+    }));
+  };
+  reader.readAsDataURL(file);
+};
 
 const starterOfficers = [
   { badge: "I769377", name: "Ford, Cesar", shift: "Day" },
@@ -181,7 +197,13 @@ export default function Page() {
   const [badgeInput, setBadgeInput] = useState('');
   const [equipmentInput, setEquipmentInput] = useState('');
   const [search, setSearch] = useState('');
-  const [newOfficer, setNewOfficer] = useState<Officer>({ badge: '', name: '', shift: 'Day' });
+  const [newOfficer, setNewOfficer] = useState({
+  name: "",
+  badge: "",
+  shift: "Day",
+  nuid: "",
+  photo: "",
+});
   const [newEquipment, setNewEquipment] = useState({ qr: '', name: '', type: 'Radio', notes: '' });
   const badgeRef = useRef<HTMLInputElement | null>(null);
   const equipmentRef = useRef<HTMLInputElement | null>(null);
@@ -583,19 +605,62 @@ export default function Page() {
 
         <div className="panel">
           <h2>Add officer</h2>
-          <div className="form-stack">
-            <label>Badge ID</label>
-            <input value={newOfficer.badge} onChange={(e) => setNewOfficer({ ...newOfficer, badge: e.target.value })} placeholder="BCI-2001" />
-            <label>Officer name</label>
-            <input value={newOfficer.name} onChange={(e) => setNewOfficer({ ...newOfficer, name: e.target.value })} placeholder="Officer Name" />
-            <label>Shift</label>
-            <select value={newOfficer.shift} onChange={(e) => setNewOfficer({ ...newOfficer, shift: e.target.value })}>
-              <option>Day</option>
-              <option>Swing</option>
-              <option>Night</option>
-            </select>
-            <button className="btn" onClick={addOfficer}>Save Officer</button>
-          </div>
+          <div className="border p-4 rounded-lg space-y-3">
+  <h2 className="text-lg font-semibold">Add New Officer</h2>
+
+  <input
+    placeholder="Badge ID"
+    value={newOfficer.badge}
+    onChange={(e) => setNewOfficer({ ...newOfficer, badge: e.target.value })}
+    className="border p-2 w-full"
+  />
+
+  <input
+    placeholder="Full Name"
+    value={newOfficer.name}
+    onChange={(e) => setNewOfficer({ ...newOfficer, name: e.target.value })}
+    className="border p-2 w-full"
+  />
+
+  <input
+    placeholder="NUID"
+    value={newOfficer.nuid}
+    onChange={(e) => setNewOfficer({ ...newOfficer, nuid: e.target.value })}
+    className="border p-2 w-full"
+  />
+
+  <select
+    value={newOfficer.shift}
+    onChange={(e) => setNewOfficer({ ...newOfficer, shift: e.target.value })}
+    className="border p-2 w-full"
+  >
+    <option>Day</option>
+    <option>Swing</option>
+    <option>Grave</option>
+  </select>
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handlePhotoUpload}
+    className="w-full"
+  />
+
+  {newOfficer.photo && (
+    <img
+      src={newOfficer.photo}
+      alt="Preview"
+      className="w-24 h-24 object-cover rounded"
+    />
+  )}
+
+  <button
+    onClick={addOfficer}
+    className="bg-blue-500 text-white px-4 py-2 rounded"
+  >
+    Add Officer
+  </button>
+</div>
         </div>
       </section>
 

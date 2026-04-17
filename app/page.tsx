@@ -419,10 +419,9 @@ export default function Page() {
       <div className="hero">
         <div>
           <span className="eyebrow">Security Equipment Checkout</span>
-          <h1>Badge scan in. QR scan out. Scan again to return.</h1>
+          <h1>BCI - Zion Medical Center.</h1>
           <p>
-            A web-based checkout app for security teams to track radios, phones, keys, tablets, and other issued equipment by officer and shift.
-          </p>
+            Badge scan in. QR scan out. Scan again to return.</p>
         </div>
         <div className="hero-actions">
           <button className="btn secondary" onClick={exportLogs}>Export Audit Log</button>

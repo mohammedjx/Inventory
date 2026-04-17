@@ -95,7 +95,7 @@ const starterOfficers = [
   { badge: "D080509", name: "Harvey, Baylee D", shift: "Day" },
   { badge: "D129530", name: "Valdivia, Luis", shift: "Day" },
   { badge: "M428554", name: "Almazan, Eleazar", shift: "Day" },
-  { badge: "\O558994\", name: "ASM Kadhim, Jawad", shift: "Day" },
+  { badge: "O558994", name: "ASM Kadhim, Jawad", shift: "Day" },
   { badge: "O861516", name: "Watkins, Freeman", shift: "Swing" },
   { badge: "F774818", name: "Verdugo, Larry", shift: "Swing" },
   { badge: "I907710", name: "Yuson, Joie", shift: "Swing" },

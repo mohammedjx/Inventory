@@ -1,21 +1,44 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  BadgeCheck,
+  CheckCircle2,
+  ClipboardList,
+  Download,
+  LogIn,
+  Package,
+  QrCode,
+  Radio,
+  Search,
+  Shield,
+  Smartphone,
+  KeyRound,
+  Undo2,
+  UserRound,
+  Camera,
+  IdCard,
+  ImagePlus,
+} from "lucide-react";
+import { motion } from "framer-motion";
+
+const STORAGE_KEY = "hospital-equipment-checkout-demo-v1";
 
 type Officer = {
   badge: string;
   name: string;
-  shift: string;
+  shift: "Day" | "Swing" | "Grave";
   nuid: string;
-  photo?: string; // base64 image
+  photo?: string;
 };
 
-type Equipment = {
+type EquipmentItem = {
   id: string;
   qr: string;
   name: string;
   type: string;
-  status: 'available' | 'checked_out';
+  status: "available" | "checked_out";
   notes: string;
   checkedOutBy?: string | null;
   checkedOutAt?: string | null;
@@ -35,7 +58,7 @@ type Session = {
   officerBadge: string;
   officerName: string;
   shift: string;
-  status: 'open' | 'closed';
+  status: "open" | "closed";
   openedAt: string;
   closedAt: string | null;
   equipment: SessionEquipment[];
@@ -50,110 +73,86 @@ type LogEntry = {
 
 type AppData = {
   officers: Officer[];
-  equipment: Equipment[];
+  equipment: EquipmentItem[];
   sessions: Session[];
   logs: LogEntry[];
 };
 
-const STORAGE_KEY = 'equipment-checkout-app-v1';
-
-const starterEquipment: Equipment[] = [
-  {
-    id: "radio-1",
-    qr: "RADIO-001",
-    name: "Radio 1",
-    type: "Radio",
-    status: "available",
-    notes: "",
-  },
-  {
-    id: "phone-1",
-    qr: "PHONE-001",
-    name: "Phone 1",
-    type: "Phone",
-    status: "available",
-    notes: "",
-  },
-  {
-    id: "keys-1",
-    qr: "KEYS-001",
-    name: "Keys 1",
-    type: "Keys",
-    status: "available",
-    notes: "",
-  },
+const starterEquipment: EquipmentItem[] = [
+  { id: "EQ-1001", qr: "RADIO-1001", name: "Radio 1", type: "Radio", status: "available", notes: "Security channel ready" },
+  { id: "EQ-1002", qr: "RADIO-1002", name: "Radio 2", type: "Radio", status: "available", notes: "Spare battery attached" },
+  { id: "EQ-2001", qr: "PHONE-2001", name: "Duty Phone A", type: "Phone", status: "available", notes: "iPhone" },
+  { id: "EQ-2002", qr: "PHONE-2002", name: "Duty Phone B", type: "Phone", status: "available", notes: "Android" },
+  { id: "EQ-3001", qr: "KEYS-3001", name: "Clinic Master Keys", type: "Keys", status: "available", notes: "Orange tag" },
+  { id: "EQ-3002", qr: "KEYS-3002", name: "ER Access Keys", type: "Keys", status: "available", notes: "Red tag" },
+  { id: "EQ-4001", qr: "BODYCAM-4001", name: "Body Cam 1", type: "Camera", status: "available", notes: "Docking charger" },
 ];
 
-const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+const starterOfficers: Officer[] = [
+  { badge: "I769377", name: "Ford, Cesar", shift: "Day", nuid: "", photo: "" },
+  { badge: "X021032", name: "Barkley, Jesse", shift: "Day", nuid: "", photo: "" },
+  { badge: "T078027", name: "Graham Jr, Michael", shift: "Swing", nuid: "", photo: "" },
+  { badge: "Q599575", name: "Vega, LaVonne R", shift: "Day", nuid: "", photo: "" },
+  { badge: "C549809", name: "Martinez, Norman", shift: "Day", nuid: "", photo: "" },
+  { badge: "Q344536", name: "Pierre, Jean", shift: "Day", nuid: "", photo: "" },
+  { badge: "X215421", name: "Millsom, Lindy", shift: "Day", nuid: "", photo: "" },
+  { badge: "I371451", name: "Opara, Ihuoma I", shift: "Swing", nuid: "", photo: "" },
+  { badge: "F423046", name: "Zendejas, Jorge", shift: "Day", nuid: "", photo: "" },
+  { badge: "D080509", name: "Harvey, Baylee D", shift: "Day", nuid: "", photo: "" },
+  { badge: "D129530", name: "Valdivia, Luis", shift: "Day", nuid: "", photo: "" },
+  { badge: "M428554", name: "Almazan, Eleazar", shift: "Day", nuid: "", photo: "" },
+  { badge: "O558994", name: "Kadhim, Jawad", shift: "Day", nuid: "", photo: "" },
+  { badge: "O861516", name: "Watkins, Freeman", shift: "Swing", nuid: "", photo: "" },
+  { badge: "F774818", name: "Verdugo, Larry", shift: "Swing", nuid: "", photo: "" },
+  { badge: "I907710", name: "Yuson, Joie", shift: "Swing", nuid: "", photo: "" },
+  { badge: "C482209", name: "Barajas, Mariann", shift: "Day", nuid: "", photo: "" },
+  { badge: "W072054", name: "Garcia Castillo, Erika", shift: "Grave", nuid: "", photo: "" },
+  { badge: "I099022", name: "Sutton, Harley", shift: "Grave", nuid: "", photo: "" },
+  { badge: "O120518", name: "Saenz, Sean M", shift: "Swing", nuid: "", photo: "" },
+  { badge: "K861246", name: "Privratsky, Ethan", shift: "Swing", nuid: "", photo: "" },
+  { badge: "Y760821", name: "Tucker, Evelyn", shift: "Day", nuid: "", photo: "" },
+  { badge: "Y375975", name: "Gonzalez, Benjamin", shift: "Swing", nuid: "", photo: "" },
+  { badge: "C885152", name: "Logan, Danielle", shift: "Swing", nuid: "", photo: "" },
+  { badge: "K739825", name: "Anthony, LaTosha M", shift: "Day", nuid: "", photo: "" },
+  { badge: "H571340", name: "Lopez, Daniel", shift: "Swing", nuid: "", photo: "" },
+  { badge: "H908040", name: "Waller, Bianka", shift: "Grave", nuid: "", photo: "" },
+  { badge: "I519301", name: "Reynoso, Victor", shift: "Day", nuid: "", photo: "" },
+  { badge: "P206728", name: "Lutfi, Nibras Z", shift: "Swing", nuid: "", photo: "" },
+  { badge: "B372721", name: "Smith, Nicolas", shift: "Day", nuid: "", photo: "" },
+  { badge: "G520786", name: "Soto, Fernando", shift: "Day", nuid: "", photo: "" },
+  { badge: "H250131", name: "Odierno, Jacob", shift: "Swing", nuid: "", photo: "" },
+  { badge: "I008579", name: "Kelley, Shelly", shift: "Day", nuid: "", photo: "" },
+  { badge: "A921583", name: "Pool, James", shift: "Swing", nuid: "", photo: "" },
+  { badge: "C013093", name: "Miller, Onika", shift: "Swing", nuid: "", photo: "" },
+  { badge: "F975786", name: "Coleman, Deonte", shift: "Grave", nuid: "", photo: "" },
+  { badge: "I629604", name: "Maya, Adan", shift: "Swing", nuid: "", photo: "" },
+  { badge: "L944929", name: "Thomas, Lamaar", shift: "Day", nuid: "", photo: "" },
+  { badge: "S771201", name: "Maluil, Abraham C", shift: "Day", nuid: "", photo: "" },
+  { badge: "B097184", name: "Kinchion, Shawn", shift: "Swing", nuid: "", photo: "" },
+  { badge: "D036447", name: "Allen, Shamonte", shift: "Grave", nuid: "", photo: "" },
+  { badge: "K343453", name: "Clay, Edward D", shift: "Swing", nuid: "", photo: "" },
+  { badge: "Q953950", name: "Rangel, Daniel", shift: "Swing", nuid: "", photo: "" },
+  { badge: "I194950", name: "Chhim, Borin", shift: "Grave", nuid: "", photo: "" },
+  { badge: "L095406", name: "Rodriguez, Jose A.", shift: "Swing", nuid: "", photo: "" },
+  { badge: "I265376", name: "Obub, Adaika", shift: "Grave", nuid: "", photo: "" },
+  { badge: "X659488", name: "Sparks, Cameron", shift: "Swing", nuid: "", photo: "" },
+  { badge: "C587341", name: "Blunt, Derek J", shift: "Swing", nuid: "", photo: "" },
+  { badge: "K926637", name: "Sales, Gary", shift: "Day", nuid: "", photo: "" },
+  { badge: "X417481", name: "Yousif, Ameera", shift: "Day", nuid: "", photo: "" },
+  { badge: "E726338", name: "Bradshaw, Kelly", shift: "Swing", nuid: "", photo: "" },
+  { badge: "W602788", name: "Gastelum, Carlos", shift: "Grave", nuid: "", photo: "" },
+  { badge: "F594838", name: "Adeeb, Louis", shift: "Swing", nuid: "", photo: "" },
+  { badge: "M073308", name: "Beasley, Charles", shift: "Grave", nuid: "", photo: "" },
+];
 
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setNewOfficer((prev) => ({
-      ...prev,
-      photo: reader.result as string,
-    }));
-  };
-  reader.readAsDataURL(file);
+const icons: Record<string, React.ComponentType<{ className?: string }>> = {
+  Radio,
+  Phone: Smartphone,
+  Keys: KeyRound,
+  Camera: Camera,
+  Default: Package,
 };
 
-const starterOfficers = [
-  { badge: "I769377", name: "Ford, Cesar", shift: "Day" },
-  { badge: "X021032", name: "Barkley, Jesse", shift: "Day" },
-  { badge: "T078027", name: "Graham Jr, Michael", shift: "Swing" },
-  { badge: "Q599575", name: "Vega, LaVonne R", shift: "Day" },
-  { badge: "C549809", name: "Martinez, Norman", shift: "Day" },
-  { badge: "Q344536", name: "Pierre, Jean", shift: "Day" },
-  { badge: "X215421", name: "Millsom, Lindy", shift: "Day" },
-  { badge: "I371451", name: "Opara, Ihuoma I", shift: "Swing" },
-  { badge: "F423046", name: "Zendejas, Jorge", shift: "Day" },
-  { badge: "D080509", name: "Harvey, Baylee D", shift: "Day" },
-  { badge: "D129530", name: "Valdivia, Luis", shift: "Day" },
-  { badge: "M428554", name: "Almazan, Eleazar", shift: "Day" },
-  { badge: "O558994", name: "ASM Kadhim, Jawad", shift: "Day" },
-  { badge: "O861516", name: "Watkins, Freeman", shift: "Swing" },
-  { badge: "F774818", name: "Verdugo, Larry", shift: "Swing" },
-  { badge: "I907710", name: "Yuson, Joie", shift: "Swing" },
-  { badge: "C482209", name: "Barajas, Mariann", shift: "Day" },
-  { badge: "W072054", name: "Garcia Castillo, Erika", shift: "Grave" },
-  { badge: "I099022", name: "Sutton, Harley", shift: "Grave" },
-  { badge: "O120518", name: "Saenz, Sean M", shift: "Swing" },
-  { badge: "K861246", name: "Privratsky, Ethan", shift: "Swing" },
-  { badge: "Y760821", name: "Tucker, Evelyn", shift: "Day" },
-  { badge: "Y375975", name: "Gonzalez, Benjamin", shift: "Swing" },
-  { badge: "C885152", name: "Logan, Danielle", shift: "Swing" },
-  { badge: "K739825", name: "Anthony, LaTosha M", shift: "Day" },
-  { badge: "H571340", name: "Lopez, Daniel", shift: "Swing" },
-  { badge: "H908040", name: "Waller, Bianka", shift: "Grave" },
-  { badge: "I519301", name: "Reynoso, Victor", shift: "Day" },
-  { badge: "P206728", name: "Lutfi, Nibras Z", shift: "Swing" },
-  { badge: "B372721", name: "Smith, Nicolas", shift: "Day" },
-  { badge: "G520786", name: "Soto, Fernando", shift: "Day" },
-  { badge: "H250131", name: "Odierno, Jacob", shift: "Swing" },
-  { badge: "I008579", name: "Kelley, Shelly", shift: "Day" },
-  { badge: "A921583", name: "Pool, James", shift: "Swing" },
-  { badge: "C013093", name: "Miller, Onika", shift: "Swing" },
-  { badge: "F975786", name: "Coleman, Deonte", shift: "Grave" },
-  { badge: "I629604", name: "Maya, Adan", shift: "Swing" },
-  { badge: "L944929", name: "Thomas, Lamaar", shift: "Day" },
-  { badge: "S771201", name: "Maluil, Abraham C", shift: "Day" },
-  { badge: "B097184", name: "Kinchion, Shawn", shift: "Swing" },
-  { badge: "D036447", name: "Allen, Shamonte", shift: "Grave" },
-  { badge: "K343453", name: "Clay, Edward D", shift: "Swing" },
-  { badge: "Q953950", name: "Rangel, Daniel", shift: "Swing" },
-  { badge: "I194950", name: "Chhim, Borin", shift: "Grave" },
-  { badge: "L095406", name: "Rodriguez, Jose A.", shift: "Swing" },
-  { badge: "I265376", name: "Obub, Adaika", shift: "Grave" },
-  { badge: "X659488", name: "Sparks, Cameron", shift: "Swing" },
-  { badge: "C587341", name: "Blunt, Derek J", shift: "Swing" },
-  { badge: "K926637", name: "Sales, Gary", shift: "Day" },
-  { badge: "X417481", name: "Yousif, Ameera", shift: "Day" },
-  { badge: "E726338", name: "Bradshaw, Kelly", shift: "Swing" },
-  { badge: "W602788", name: "Gastelum, Carlos", shift: "Grave" },
-  { badge: "F594838", name: "Adeeb, Louis", shift: "Swing" },
-  { badge: "M073308", name: "Beasley, Charles", shift: "Grave" },
-];
 function nowStamp() {
   return new Date().toLocaleString();
 }
@@ -162,13 +161,14 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function downloadCSV(filename: string, rows: (string | number | null | undefined)[][]) {
+function downloadCSV(filename: string, rows: (string | number | null)[][]) {
   const csv = rows
-    .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-    .join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = filename;
   link.click();
@@ -176,54 +176,234 @@ function downloadCSV(filename: string, rows: (string | number | null | undefined
 }
 
 function loadData(): AppData {
-  if (typeof window === 'undefined') {
-    return { officers: starterOfficers, equipment: starterEquipment, sessions: [], logs: [] };
+  if (typeof window === "undefined") {
+    return {
+      officers: starterOfficers,
+      equipment: starterEquipment,
+      sessions: [],
+      logs: [],
+    };
   }
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      return JSON.parse(saved) as AppData;
-    } catch {
-      return { officers: starterOfficers, equipment: starterEquipment, sessions: [], logs: [] };
-    }
-  }
-  return { officers: starterOfficers, equipment: starterEquipment, sessions: [], logs: [] };
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) return JSON.parse(saved) as AppData;
+
+  return {
+    officers: starterOfficers,
+    equipment: starterEquipment,
+    sessions: [],
+    logs: [],
+  };
 }
 
-export default function Page() {
-  const [data, setData] = useState<AppData>({ officers: starterOfficers, equipment: starterEquipment, sessions: [], logs: [] });
-  const [loaded, setLoaded] = useState(false);
-  const [activeOfficerBadge, setActiveOfficerBadge] = useState('');
-  const [badgeInput, setBadgeInput] = useState('');
-  const [equipmentInput, setEquipmentInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [newOfficer, setNewOfficer] = useState({
-  name: "",
-  badge: "",
-  shift: "Day",
-  nuid: "",
-  photo: "",
-});
-  const [newEquipment, setNewEquipment] = useState({ qr: '', name: '', type: 'Radio', notes: '' });
-  const badgeRef = useRef<HTMLInputElement | null>(null);
-  const equipmentRef = useRef<HTMLInputElement | null>(null);
+function cls(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={cls("rounded-2xl border border-slate-200 bg-white shadow-sm", className)}>{children}</div>;
+}
+
+function CardHeader({ children }: { children: React.ReactNode }) {
+  return <div className="p-5 pb-0">{children}</div>;
+}
+
+function CardContent({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={cls("p-5", className)}>{children}</div>;
+}
+
+function CardTitle({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <h2 className={cls("text-xl font-semibold", className)}>{children}</h2>;
+}
+
+function Button({
+  children,
+  onClick,
+  variant = "default",
+  className = "",
+  type = "button",
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: "default" | "outline";
+  className?: string;
+  type?: "button" | "submit";
+}) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className={cls(
+        "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition",
+        variant === "default" && "bg-slate-900 text-white hover:bg-slate-800",
+        variant === "outline" && "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50",
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={cls(
+        "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-0 placeholder:text-slate-400 focus:border-slate-400",
+        props.className || ""
+      )}
+    />
+  );
+}
+
+function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={cls(
+        "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-slate-400",
+        props.className || ""
+      )}
+    />
+  );
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <label className="text-sm font-medium text-slate-700">{children}</label>;
+}
+
+function Badge({
+  children,
+  variant = "default",
+  className = "",
+}: {
+  children: React.ReactNode;
+  variant?: "default" | "secondary";
+  className?: string;
+}) {
+  return (
+    <span
+      className={cls(
+        "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
+        variant === "default" && "bg-slate-900 text-white",
+        variant === "secondary" && "bg-slate-100 text-slate-700",
+        className
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  subtext,
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  subtext: string;
+}) {
+  return (
+    <Card>
+      <CardContent>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-slate-500">{title}</p>
+            <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
+            <p className="mt-2 text-sm text-slate-500">{subtext}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-100 p-3">
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EquipmentIcon({ type }: { type: string }) {
+  const Icon = icons[type] || icons.Default;
+  return <Icon className="h-4 w-4" />;
+}
+
+function ScanInput({
+  label,
+  placeholder,
+  value,
+  setValue,
+  onSubmit,
+  inputRef,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  setValue: (value: string) => void;
+  onSubmit: () => void;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex gap-2">
+        <Input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onSubmit();
+          }}
+          placeholder={placeholder}
+          className="h-11"
+        />
+        <Button onClick={onSubmit} className="h-11">
+          Scan
+        </Button>
+      </div>
+      <p className="text-xs text-slate-500">
+        Works with most badge and QR scanners that type into the focused field and send Enter.
+      </p>
+    </div>
+  );
+}
+
+export default function EquipmentCheckoutApp() {
+  const [data, setData] = useState<AppData>(() => loadData());
+  const [activeOfficerBadge, setActiveOfficerBadge] = useState("");
+  const [badgeInput, setBadgeInput] = useState("");
+  const [equipmentInput, setEquipmentInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"scanner" | "equipment" | "sessions" | "admin">("scanner");
+  const [newOfficer, setNewOfficer] = useState<Officer>({
+    badge: "",
+    name: "",
+    shift: "Day",
+    nuid: "",
+    photo: "",
+  });
+  const [newEquipment, setNewEquipment] = useState({
+    qr: "",
+    name: "",
+    type: "Radio",
+    notes: "",
+  });
+
+  const badgeRef = useRef<HTMLInputElement>(null);
+  const equipmentRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setData(loadData());
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (!loaded) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data, loaded]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [data]);
 
   useEffect(() => {
     badgeRef.current?.focus();
   }, []);
 
   const activeSession = useMemo(
-    () => data.sessions.find((s) => s.officerBadge === activeOfficerBadge && s.status === 'open'),
+    () => data.sessions.find((s) => s.officerBadge === activeOfficerBadge && s.status === "open"),
     [data.sessions, activeOfficerBadge]
   );
 
@@ -232,9 +412,14 @@ export default function Page() {
     [data.officers, activeOfficerBadge]
   );
 
+  const availableCount = data.equipment.filter((e) => e.status === "available").length;
+  const checkedOutCount = data.equipment.filter((e) => e.status === "checked_out").length;
+  const openSessions = data.sessions.filter((s) => s.status === "open").length;
+
   const filteredEquipment = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return data.equipment;
+
     return data.equipment.filter(
       (e) =>
         e.name.toLowerCase().includes(q) ||
@@ -257,16 +442,17 @@ export default function Page() {
 
     const officer = data.officers.find((o) => o.badge.toUpperCase() === badge);
     if (!officer) {
-      addLog('Unknown badge scanned', badge);
-      setBadgeInput('');
+      addLog("Unknown badge scanned", badge);
+      setBadgeInput("");
       return;
     }
 
     setActiveOfficerBadge(officer.badge);
 
     setData((prev) => {
-      const existing = prev.sessions.find((s) => s.officerBadge === officer.badge && s.status === 'open');
+      const existing = prev.sessions.find((s) => s.officerBadge === officer.badge && s.status === "open");
       if (existing) return prev;
+
       return {
         ...prev,
         sessions: [
@@ -275,7 +461,7 @@ export default function Page() {
             officerBadge: officer.badge,
             officerName: officer.name,
             shift: officer.shift,
-            status: 'open',
+            status: "open",
             openedAt: nowStamp(),
             closedAt: null,
             equipment: [],
@@ -285,8 +471,8 @@ export default function Page() {
       };
     });
 
-    addLog('Officer session opened', `${officer.name} (${officer.badge})`);
-    setBadgeInput('');
+    addLog("Officer session opened", `${officer.name} (${officer.badge})`);
+    setBadgeInput("");
     setTimeout(() => equipmentRef.current?.focus(), 50);
   }
 
@@ -296,19 +482,19 @@ export default function Page() {
 
     const item = data.equipment.find((e) => e.qr.toUpperCase() === code || e.id.toUpperCase() === code);
     if (!item) {
-      addLog('Unknown equipment scanned', code);
-      setEquipmentInput('');
+      addLog("Unknown equipment scanned", code);
+      setEquipmentInput("");
       return;
     }
 
     const officerName = activeOfficer?.name || activeSession.officerName;
 
-    if (item.status === 'available') {
+    if (item.status === "available") {
       setData((prev) => ({
         ...prev,
         equipment: prev.equipment.map((e) =>
           e.id === item.id
-            ? { ...e, status: 'checked_out', checkedOutBy: activeSession.officerBadge, checkedOutAt: nowStamp() }
+            ? { ...e, status: "checked_out", checkedOutBy: activeSession.officerBadge, checkedOutAt: nowStamp() }
             : e
         ),
         sessions: prev.sessions.map((s) =>
@@ -330,12 +516,12 @@ export default function Page() {
             : s
         ),
       }));
-      addLog('Equipment checked out', `${item.name} → ${officerName}`);
-    } else if (item.status === 'checked_out' && item.checkedOutBy === activeSession.officerBadge) {
+      addLog("Equipment checked out", `${item.name} → ${officerName}`);
+    } else if (item.status === "checked_out" && item.checkedOutBy === activeSession.officerBadge) {
       setData((prev) => ({
         ...prev,
         equipment: prev.equipment.map((e) =>
-          e.id === item.id ? { ...e, status: 'available', checkedOutBy: null, checkedOutAt: null } : e
+          e.id === item.id ? { ...e, status: "available", checkedOutBy: null, checkedOutAt: null } : e
         ),
         sessions: prev.sessions.map((s) =>
           s.id === activeSession.id
@@ -348,94 +534,122 @@ export default function Page() {
             : s
         ),
       }));
-      addLog('Equipment checked in', `${item.name} ← ${officerName}`);
+      addLog("Equipment checked in", `${item.name} ← ${officerName}`);
     } else {
-      const holder = data.officers.find((o) => o.badge === item.checkedOutBy)?.name || item.checkedOutBy || 'another officer';
-      addLog('Scan blocked', `${item.name} is currently assigned to ${holder}`);
+      const holder =
+        data.officers.find((o) => o.badge === item.checkedOutBy)?.name || item.checkedOutBy || "another officer";
+      addLog("Scan blocked", `${item.name} is currently assigned to ${holder}`);
     }
 
-    setEquipmentInput('');
+    setEquipmentInput("");
   }
 
   function closeSession() {
     if (!activeSession) return;
+
     const outstanding = activeSession.equipment.filter((e) => !e.checkedInAt);
     if (outstanding.length > 0) {
-      addLog('Session close blocked', `${activeSession.officerName} still has ${outstanding.length} item(s) checked out`);
+      addLog("Session close blocked", `${activeSession.officerName} still has ${outstanding.length} item(s) checked out`);
       return;
     }
 
     setData((prev) => ({
       ...prev,
       sessions: prev.sessions.map((s) =>
-        s.id === activeSession.id ? { ...s, status: 'closed', closedAt: nowStamp() } : s
+        s.id === activeSession.id ? { ...s, status: "closed", closedAt: nowStamp() } : s
       ),
     }));
-    addLog('Officer session closed', `${activeSession.officerName} (${activeSession.officerBadge})`);
-    setActiveOfficerBadge('');
+
+    addLog("Officer session closed", `${activeSession.officerName} (${activeSession.officerBadge})`);
+    setActiveOfficerBadge("");
     setTimeout(() => badgeRef.current?.focus(), 50);
   }
 
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setNewOfficer((prev) => ({
+        ...prev,
+        photo: typeof reader.result === "string" ? reader.result : "",
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
   function addOfficer() {
-    const addOfficer = () => {
-  if (!newOfficer.name || !newOfficer.badge || !newOfficer.nuid) return;
+    if (!newOfficer.badge.trim() || !newOfficer.name.trim() || !newOfficer.nuid.trim()) return;
 
-  const officer: Officer = {
-    badge: newOfficer.badge,
-    name: newOfficer.name,
-    shift: newOfficer.shift,
-    nuid: newOfficer.nuid,
-    photo: newOfficer.photo,
-  };
+    const badge = newOfficer.badge.trim().toUpperCase();
 
-  setData((prev) => ({
-    ...prev,
-    officers: [...prev.officers, officer],
-  }));
+    const exists = data.officers.some((o) => o.badge.toUpperCase() === badge);
+    if (exists) {
+      addLog("Officer add blocked", `Badge ${badge} already exists`);
+      return;
+    }
 
-  // reset form
-  setNewOfficer({
-    name: "",
-    badge: "",
-    shift: "Day",
-    nuid: "",
-    photo: "",
-  });
-};
+    setData((prev) => ({
+      ...prev,
+      officers: [
+        ...prev.officers,
+        {
+          badge,
+          name: newOfficer.name.trim(),
+          shift: newOfficer.shift,
+          nuid: newOfficer.nuid.trim(),
+          photo: newOfficer.photo || "",
+        },
+      ],
+    }));
+
+    addLog("Officer added", `${newOfficer.name.trim()} (${badge})`);
+    setNewOfficer({
+      badge: "",
+      name: "",
+      shift: "Day",
+      nuid: "",
+      photo: "",
+    });
   }
 
   function addEquipment() {
-    if (!newEquipment.qr.trim() || !newEquipment.name.trim()) return;
+    if (!newEquipment.qr || !newEquipment.name) return;
+
     const id = `EQ-${Math.floor(1000 + Math.random() * 9000)}`;
+
     setData((prev) => ({
       ...prev,
       equipment: [
         ...prev.equipment,
         {
           id,
+          ...newEquipment,
           qr: newEquipment.qr.toUpperCase(),
-          name: newEquipment.name,
-          type: newEquipment.type,
-          notes: newEquipment.notes,
-          status: 'available',
+          status: "available",
+          checkedOutAt: null,
+          checkedOutBy: null,
         },
       ],
     }));
-    addLog('Equipment added', `${newEquipment.name} (${newEquipment.qr.toUpperCase()})`);
-    setNewEquipment({ qr: '', name: '', type: 'Radio', notes: '' });
+
+    addLog("Equipment added", `${newEquipment.name} (${newEquipment.qr.toUpperCase()})`);
+    setNewEquipment({ qr: "", name: "", type: "Radio", notes: "" });
   }
 
   function exportLogs() {
-    downloadCSV('equipment-audit-log.csv', [
-      ['Time', 'Action', 'Detail'],
+    downloadCSV("equipment-audit-log.csv", [
+      ["Time", "Action", "Detail"],
       ...data.logs.map((l) => [l.time, l.action, l.detail]),
     ]);
   }
 
   function exportSessions() {
-    const rows: (string | number | null | undefined)[][] = [
-      ['Officer', 'Badge', 'Shift', 'Status', 'Opened', 'Closed', 'Equipment', 'Checked Out', 'Checked In'],
+    const rows: (string | number | null)[][] = [
+      ["Officer", "Badge", "Shift", "Status", "Opened", "Closed", "Equipment", "Checked Out", "Checked In"],
     ];
+
     data.sessions.forEach((session) => {
       if (!session.equipment.length) {
         rows.push([
@@ -444,10 +658,10 @@ export default function Page() {
           session.shift,
           session.status,
           session.openedAt,
-          session.closedAt || '',
-          '',
-          '',
-          '',
+          session.closedAt || "",
+          "",
+          "",
+          "",
         ]);
       } else {
         session.equipment.forEach((item) => {
@@ -457,318 +671,504 @@ export default function Page() {
             session.shift,
             session.status,
             session.openedAt,
-            session.closedAt || '',
+            session.closedAt || "",
             item.name,
             item.checkedOutAt,
-            item.checkedInAt || '',
+            item.checkedInAt || "",
           ]);
         });
       }
     });
-    downloadCSV('equipment-sessions.csv', rows);
+
+    downloadCSV("equipment-sessions.csv", rows);
   }
 
-  const availableCount = data.equipment.filter((e) => e.status === 'available').length;
-  const checkedOutCount = data.equipment.filter((e) => e.status === 'checked_out').length;
-  const openSessions = data.sessions.filter((s) => s.status === 'open').length;
-
   return (
-    <main className="page-shell">
-      <div className="hero">
-        <div>
-          <span className="eyebrow">Security Equipment Checkout</span>
-          <h1>BCI - Zion Medical Center.</h1>
-          <p>
-            Badge scan in. QR scan out. Scan again to return.</p>
-        </div>
-        <div className="hero-actions">
-          <button className="btn secondary" onClick={exportLogs}>Export Audit Log</button>
-          <button className="btn secondary" onClick={exportSessions}>Export Sessions</button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-7xl p-4 md:p-8">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-sm text-slate-600 shadow-sm">
+                <Shield className="h-4 w-4" />
+                Security Equipment Checkout
+              </div>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+                Badge-in, scan gear, track accountability.
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm text-slate-600 md:text-base">
+                Built for shift change. Officers scan their badge to start a session, scan equipment to check out, and
+                scan the same items again to return them before ending the shift.
+              </p>
+            </div>
 
-      <section className="stats-grid">
-        <StatCard title="Available Equipment" value={availableCount} subtitle="Ready for checkout" />
-        <StatCard title="Checked Out" value={checkedOutCount} subtitle="Currently assigned" />
-        <StatCard title="Open Sessions" value={openSessions} subtitle="Active shifts" />
-        <StatCard title="Registered Officers" value={data.officers.length} subtitle="Badge-enabled roster" />
-      </section>
-
-      <section className="content-grid">
-        <div className="panel span-2">
-          <h2>Officer session</h2>
-          <p className="muted">Badge scanners and QR scanners usually act like keyboards. Click in a field and scan.</p>
-
-          <div className="form-block">
-            <label htmlFor="badge">1) Scan officer badge</label>
-            <div className="input-row">
-              <input
-                id="badge"
-                ref={badgeRef}
-                value={badgeInput}
-                onChange={(e) => setBadgeInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && registerOfficerScan()}
-                placeholder="Scan badge or type badge ID"
-              />
-              <button className="btn" onClick={registerOfficerScan}>Scan Badge</button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={exportLogs}>
+                <Download className="mr-2 h-4 w-4" />
+                Export Audit Log
+              </Button>
+              <Button variant="outline" onClick={exportSessions}>
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Export Sessions
+              </Button>
             </div>
           </div>
 
-          <div className="session-box">
-            {activeOfficer && activeSession ? (
-              <>
-                <div className="session-header">
-                  <div>
-                    <div className="session-title">{activeOfficer.name}</div>
-                    <div className="muted">Badge: {activeOfficer.badge} · Shift: {activeOfficer.shift}</div>
-                  </div>
-                  <span className="pill success">Session Open</span>
-                </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            <StatCard title="Available Equipment" value={availableCount} icon={CheckCircle2} subtext="Ready for checkout" />
+            <StatCard title="Checked Out" value={checkedOutCount} icon={Package} subtext="Currently assigned" />
+            <StatCard title="Open Sessions" value={openSessions} icon={LogIn} subtext="Officers on active shift" />
+            <StatCard title="Registered Officers" value={data.officers.length} icon={UserRound} subtext="Badge-enabled roster" />
+          </div>
 
-                <div className="form-block">
-                  <label htmlFor="equipment">2) Scan equipment QR code</label>
-                  <div className="input-row">
-                    <input
-                      id="equipment"
-                      ref={equipmentRef}
-                      value={equipmentInput}
-                      onChange={(e) => setEquipmentInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleEquipmentScan()}
-                      placeholder="Scan radio, phone, keys, tablet, etc."
+          <div className="rounded-2xl bg-white p-1 shadow-sm">
+            <div className="grid w-full grid-cols-4 gap-1">
+              {(["scanner", "equipment", "sessions", "admin"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={cls(
+                    "rounded-xl px-3 py-2 text-sm font-medium capitalize",
+                    activeTab === tab ? "bg-slate-900 text-white" : "bg-white text-slate-700 hover:bg-slate-50"
+                  )}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeTab === "scanner" && (
+            <div className="grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BadgeCheck className="h-5 w-5" />
+                    Shift Start / End
+                  </CardTitle>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  <ScanInput
+                    label="1) Scan officer badge"
+                    placeholder="Scan badge or type badge number"
+                    value={badgeInput}
+                    setValue={setBadgeInput}
+                    onSubmit={registerOfficerScan}
+                    inputRef={badgeRef}
+                  />
+
+                  <div className="rounded-2xl border bg-slate-50 p-4">
+                    {activeOfficer ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-4">
+                            {activeOfficer.photo ? (
+                              <img
+                                src={activeOfficer.photo}
+                                alt={activeOfficer.name}
+                                className="h-20 w-20 rounded-2xl object-cover border border-slate-200 bg-white"
+                              />
+                            ) : (
+                              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400">
+                                <UserRound className="h-8 w-8" />
+                              </div>
+                            )}
+
+                            <div>
+                              <p className="text-sm text-slate-500">Active officer</p>
+                              <h3 className="text-2xl font-semibold">{activeOfficer.name}</h3>
+                              <p className="text-sm text-slate-600">
+                                Badge: {activeOfficer.badge} · Shift: {activeOfficer.shift}
+                              </p>
+                              <p className="text-sm text-slate-600">NUID: {activeOfficer.nuid || "Not entered"}</p>
+                            </div>
+                          </div>
+
+                          <Badge className="px-3 py-1">Session Open</Badge>
+                        </div>
+
+                        <ScanInput
+                          label="2) Scan equipment QR code"
+                          placeholder="Scan radio, phone, key set, camera, etc."
+                          value={equipmentInput}
+                          setValue={setEquipmentInput}
+                          onSubmit={handleEquipmentScan}
+                          inputRef={equipmentRef}
+                        />
+
+                        <div className="rounded-2xl bg-white p-4 shadow-sm">
+                          <div className="mb-3 flex items-center justify-between">
+                            <h4 className="font-medium">Current session items</h4>
+                            <p className="text-sm text-slate-500">Scan again to check in</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            {(activeSession?.equipment || []).length === 0 && (
+                              <p className="text-sm text-slate-500">No equipment checked out yet.</p>
+                            )}
+
+                            {(activeSession?.equipment || []).map((item, idx) => (
+                              <div key={`${item.equipmentId}-${idx}`} className="flex items-center justify-between rounded-xl border p-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="rounded-xl bg-slate-100 p-2">
+                                    <EquipmentIcon type={item.type} />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{item.name}</p>
+                                    <p className="text-xs text-slate-500">{item.qr}</p>
+                                  </div>
+                                </div>
+
+                                {item.checkedInAt ? (
+                                  <Badge variant="secondary">Returned</Badge>
+                                ) : (
+                                  <Badge>Out</Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <Button onClick={closeSession}>End shift session</Button>
+                          <Button variant="outline" onClick={() => setActiveOfficerBadge("")}>
+                            Switch officer
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-dashed bg-white p-6 text-center text-slate-500">
+                        Scan an officer badge to begin a checkout session.
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    Activity Feed
+                  </CardTitle>
+                </CardHeader>
+
+                <CardContent>
+                  <div className="max-h-[560px] space-y-3 overflow-y-auto pr-2">
+                    {data.logs.length === 0 && <p className="text-sm text-slate-500">No activity yet.</p>}
+
+                    {data.logs.map((log) => (
+                      <div key={log.id} className="rounded-2xl border bg-white p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-medium">{log.action}</p>
+                          <p className="text-xs text-slate-500">{log.time}</p>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-600">{log.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "equipment" && (
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <CardTitle>Equipment Inventory</CardTitle>
+
+                  <div className="relative w-full md:w-80">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search equipment"
+                      className="pl-9"
                     />
-                    <button className="btn" onClick={handleEquipmentScan}>Scan Item</button>
                   </div>
                 </div>
+              </CardHeader>
 
-                <div className="subpanel">
-                  <div className="subpanel-header">
-                    <strong>Current session items</strong>
-                    <span className="muted">Scan again to check in</span>
-                  </div>
-                  <div className="item-list">
-                    {activeSession.equipment.length === 0 && <div className="empty">No equipment checked out yet.</div>}
-                    {activeSession.equipment.map((item, idx) => (
-                      <div className="item-row" key={`${item.equipmentId}-${idx}`}>
-                        <div>
-                          <div className="item-name">{item.name}</div>
-                          <div className="muted small">{item.qr}</div>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredEquipment.map((item) => (
+                    <div key={item.id} className="rounded-2xl border bg-white p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-xl bg-slate-100 p-2">
+                            <EquipmentIcon type={item.type} />
+                          </div>
+                          <div>
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-xs text-slate-500">
+                              {item.type} · {item.qr}
+                            </p>
+                          </div>
                         </div>
-                        <span className={`pill ${item.checkedInAt ? 'neutral' : 'warning'}`}>
-                          {item.checkedInAt ? 'Returned' : 'Out'}
-                        </span>
+
+                        {item.status === "available" ? (
+                          <Badge variant="secondary">Available</Badge>
+                        ) : (
+                          <Badge>Checked out</Badge>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="action-row">
-                  <button className="btn" onClick={closeSession}>End Shift Session</button>
-                  <button className="btn secondary" onClick={() => setActiveOfficerBadge('')}>Switch Officer</button>
-                </div>
-              </>
-            ) : (
-              <div className="empty tall">Scan an officer badge to begin a shift session.</div>
-            )}
-          </div>
-        </div>
+                      <p className="mt-3 text-sm text-slate-600">{item.notes || "No notes"}</p>
 
-        <div className="panel">
-          <h2>Activity feed</h2>
-          <div className="feed">
-            {data.logs.length === 0 && <div className="empty">No activity yet.</div>}
-            {data.logs.map((log) => (
-              <div className="feed-entry" key={log.id}>
-                <div className="feed-top">
-                  <strong>{log.action}</strong>
-                  <span className="muted small">{log.time}</span>
-                </div>
-                <div className="muted">{log.detail}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="content-grid lower-grid">
-        <div className="panel span-2">
-          <div className="panel-head-inline">
-            <h2>Equipment inventory</h2>
-            <input
-              className="search-input"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search equipment"
-            />
-          </div>
-          <div className="inventory-grid">
-            {filteredEquipment.map((item) => (
-              <div className="inventory-card" key={item.id}>
-                <div className="inventory-top">
-                  <div>
-                    <div className="item-name">{item.name}</div>
-                    <div className="muted small">{item.type} · {item.qr}</div>
-                  </div>
-                  <span className={`pill ${item.status === 'available' ? 'neutral' : 'warning'}`}>
-                    {item.status === 'available' ? 'Available' : 'Checked Out'}
-                  </span>
-                </div>
-                <p className="card-note">{item.notes || 'No notes'}</p>
-                {item.checkedOutBy && (
-                  <div className="muted small">Assigned to {item.checkedOutBy} since {item.checkedOutAt}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="panel">
-          <h2>Add officer</h2>
-          <div className="border p-4 rounded-lg space-y-3">
-  <h2 className="text-lg font-semibold">Add New Officer</h2>
-
-  <input
-    placeholder="Badge ID"
-    value={newOfficer.badge}
-    onChange={(e) => setNewOfficer({ ...newOfficer, badge: e.target.value })}
-    className="border p-2 w-full"
-  />
-
-  <input
-    placeholder="Full Name"
-    value={newOfficer.name}
-    onChange={(e) => setNewOfficer({ ...newOfficer, name: e.target.value })}
-    className="border p-2 w-full"
-  />
-
-  <input
-    placeholder="NUID"
-    value={newOfficer.nuid}
-    onChange={(e) => setNewOfficer({ ...newOfficer, nuid: e.target.value })}
-    className="border p-2 w-full"
-  />
-
-  <select
-    value={newOfficer.shift}
-    onChange={(e) => setNewOfficer({ ...newOfficer, shift: e.target.value })}
-    className="border p-2 w-full"
-  >
-    <option>Day</option>
-    <option>Swing</option>
-    <option>Grave</option>
-  </select>
-
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handlePhotoUpload}
-    className="w-full"
-  />
-
-  {newOfficer.photo && (
-    <img
-      src={newOfficer.photo}
-      alt="Preview"
-      className="w-24 h-24 object-cover rounded"
-    />
-  )}
-
-  <button
-    onClick={addOfficer}
-    className="bg-blue-500 text-white px-4 py-2 rounded"
-  >
-    Add Officer
-  </button>
-</div>
-        </div>
-      </section>
-
-      <section className="content-grid lower-grid">
-        <div className="panel span-3">
-          <h2>Sessions</h2>
-          <div className="session-cards">
-            {data.sessions.length === 0 && <div className="empty">No sessions yet.</div>}
-            {data.sessions.map((session) => {
-              const outstanding = session.equipment.filter((i) => !i.checkedInAt).length;
-              return (
-                <div className="session-card" key={session.id}>
-                  <div className="session-header">
-                    <div>
-                      <div className="item-name">{session.officerName}</div>
-                      <div className="muted small">{session.officerBadge} · {session.shift} shift</div>
+                      {item.checkedOutBy && (
+                        <p className="mt-2 text-xs text-slate-500">
+                          Assigned to {item.checkedOutBy} since {item.checkedOutAt}
+                        </p>
+                      )}
                     </div>
-                    <span className={`pill ${session.status === 'open' ? 'success' : 'neutral'}`}>{session.status}</span>
-                  </div>
-                  <div className="session-meta-grid">
-                    <div><span className="muted small">Started</span><div>{session.openedAt}</div></div>
-                    <div><span className="muted small">Ended</span><div>{session.closedAt || 'Still active'}</div></div>
-                    <div><span className="muted small">Outstanding</span><div>{outstanding}</div></div>
-                  </div>
-                  <div className="mini-list">
-                    {session.equipment.length === 0 && <div className="muted small">No equipment in this session.</div>}
-                    {session.equipment.map((item, idx) => (
-                      <div className="mini-item" key={`${item.equipmentId}-${idx}`}>
-                        <div>
-                          <div className="small-strong">{item.name}</div>
-                          <div className="muted small">Out: {item.checkedOutAt}</div>
-                        </div>
-                        <div className="muted small">{item.checkedInAt ? `In: ${item.checkedInAt}` : 'Not returned'}</div>
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+              </CardContent>
+            </Card>
+          )}
 
-      <section className="content-grid lower-grid">
-        <div className="panel span-3">
-          <h2>Add equipment</h2>
-          <div className="form-grid">
-            <div className="form-stack">
-              <label>QR Code value</label>
-              <input value={newEquipment.qr} onChange={(e) => setNewEquipment({ ...newEquipment, qr: e.target.value })} placeholder="RADIO-3001" />
-            </div>
-            <div className="form-stack">
-              <label>Equipment name</label>
-              <input value={newEquipment.name} onChange={(e) => setNewEquipment({ ...newEquipment, name: e.target.value })} placeholder="Radio 3" />
-            </div>
-            <div className="form-stack">
-              <label>Type</label>
-              <select value={newEquipment.type} onChange={(e) => setNewEquipment({ ...newEquipment, type: e.target.value })}>
-                <option>Radio</option>
-                <option>Phone</option>
-                <option>Keys</option>
-                <option>Tablet</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div className="form-stack span-2">
-              <label>Notes</label>
-              <textarea value={newEquipment.notes} onChange={(e) => setNewEquipment({ ...newEquipment, notes: e.target.value })} placeholder="Battery included, key ring color, assigned area, serial notes, etc." />
-            </div>
-            <div className="form-stack">
-              <label>&nbsp;</label>
-              <button className="btn" onClick={addEquipment}>Save Equipment</button>
-            </div>
-          </div>
-        </div>
-      </section>
+          {activeTab === "sessions" && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {data.sessions.map((session) => {
+                const outstanding = session.equipment.filter((i) => !i.checkedInAt).length;
+                const officer = data.officers.find((o) => o.badge === session.officerBadge);
 
-      <section className="notice">
-        <strong>Important:</strong> this packaged version stores data in the browser only. For real multi-user use at work, the next upgrade is connecting it to a shared cloud database like Supabase or Firebase.
-      </section>
-    </main>
-  );
-}
+                return (
+                  <Card key={session.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          {officer?.photo ? (
+                            <img
+                              src={officer.photo}
+                              alt={session.officerName}
+                              className="h-14 w-14 rounded-xl object-cover border border-slate-200"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                              <UserRound className="h-6 w-6" />
+                            </div>
+                          )}
 
-function StatCard({ title, value, subtitle }: { title: string; value: number; subtitle: string }) {
-  return (
-    <div className="stat-card">
-      <div className="muted small">{title}</div>
-      <div className="stat-value">{value}</div>
-      <div className="muted small">{subtitle}</div>
+                          <div>
+                            <CardTitle>{session.officerName}</CardTitle>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {session.officerBadge} · {session.shift} shift
+                            </p>
+                            {officer?.nuid && <p className="text-sm text-slate-500">NUID: {officer.nuid}</p>}
+                          </div>
+                        </div>
+
+                        <Badge variant={session.status === "open" ? "default" : "secondary"}>
+                          {session.status === "open" ? "Open" : "Closed"}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <p className="text-slate-500">Started</p>
+                          <p className="mt-1 font-medium">{session.openedAt}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <p className="text-slate-500">Ended</p>
+                          <p className="mt-1 font-medium">{session.closedAt || "Still active"}</p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="font-medium">Checked equipment</p>
+                          <p className="text-sm text-slate-500">Outstanding: {outstanding}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          {session.equipment.length === 0 && <p className="text-sm text-slate-500">No items in this session.</p>}
+
+                          {session.equipment.map((item, idx) => (
+                            <div key={`${item.equipmentId}-${idx}`} className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
+                              <div>
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-xs text-slate-500">Out: {item.checkedOutAt}</p>
+                              </div>
+
+                              <div className="text-right text-xs text-slate-500">
+                                {item.checkedInAt ? (
+                                  <span className="inline-flex items-center gap-1">
+                                    <Undo2 className="h-3.5 w-3.5" />
+                                    In: {item.checkedInAt}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1">
+                                    <Package className="h-3.5 w-3.5" />
+                                    Not returned
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {activeTab === "admin" && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Add Officer</CardTitle>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Badge ID</Label>
+                    <Input
+                      value={newOfficer.badge}
+                      onChange={(e) => setNewOfficer({ ...newOfficer, badge: e.target.value })}
+                      placeholder="I769377"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Officer Name</Label>
+                    <Input
+                      value={newOfficer.name}
+                      onChange={(e) => setNewOfficer({ ...newOfficer, name: e.target.value })}
+                      placeholder="Ford, Cesar"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>NUID</Label>
+                    <div className="relative">
+                      <IdCard className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        value={newOfficer.nuid}
+                        onChange={(e) => setNewOfficer({ ...newOfficer, nuid: e.target.value })}
+                        placeholder="Enter NUID number"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Shift</Label>
+                    <select
+                      value={newOfficer.shift}
+                      onChange={(e) =>
+                        setNewOfficer({
+                          ...newOfficer,
+                          shift: e.target.value as Officer["shift"],
+                        })
+                      }
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="Day">Day</option>
+                      <option value="Swing">Swing</option>
+                      <option value="Grave">Grave</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Officer Picture</Label>
+                    <div className="rounded-xl border border-dashed border-slate-300 p-4">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+                        <ImagePlus className="h-4 w-4" />
+                        Upload officer photo
+                        <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                      </label>
+
+                      {newOfficer.photo ? (
+                        <div className="mt-4">
+                          <img
+                            src={newOfficer.photo}
+                            alt="Officer preview"
+                            className="h-24 w-24 rounded-2xl object-cover border border-slate-200"
+                          />
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-slate-500">JPG or PNG works best.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button onClick={addOfficer}>Save officer</Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Add Equipment</CardTitle>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>QR Code Value</Label>
+                    <Input
+                      value={newEquipment.qr}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, qr: e.target.value })}
+                      placeholder="RADIO-3001"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Equipment Name</Label>
+                    <Input
+                      value={newEquipment.name}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, name: e.target.value })}
+                      placeholder="Radio 3"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Type</Label>
+                    <select
+                      value={newEquipment.type}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, type: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="Radio">Radio</option>
+                      <option value="Phone">Phone</option>
+                      <option value="Keys">Keys</option>
+                      <option value="Camera">Camera</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={newEquipment.notes}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, notes: e.target.value })}
+                      placeholder="Battery included, key ring color, assigned area, etc."
+                    />
+                  </div>
+
+                  <Button onClick={addEquipment}>Save equipment</Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <Card className="border-emerald-200 bg-emerald-50">
+            <CardContent className="flex flex-col gap-2 text-sm text-emerald-900">
+              <p className="font-medium">Recommended real-world setup</p>
+              <p>
+                Use badge scanners and QR scanners in keyboard-wedge mode so they act like fast keyboards. In production,
+                connect this UI to a secure database and add supervisor permissions, lost-item workflows, and device-camera
+                scanning for mobile use.
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
     </div>
   );
 }

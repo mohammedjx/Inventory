@@ -25,6 +25,7 @@ import { motion } from "framer-motion";
 
 const STORAGE_KEY = "hospital-equipment-checkout-demo-v1";
 
+
 type Officer = {
   badge: string;
   name: string;
